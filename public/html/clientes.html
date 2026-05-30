@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Clientes - Estoque e Vendas</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link 
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" 
+    rel="stylesheet">
+</head>
+<body class="bg-light">
+  <main class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h1 class="h3">Clientes</h1>
+      <div>
+        <a href="/login" class="btn btn-outline-primary">Login</a>
+        <a href="/produtos" class="btn btn-outline-secondary">Produtos</a>
+      </div>
+    </div>
+
+    <div class="card shadow mb-4">
+      <div class="card-body">
+        <h2 class="h5">Cadastrar / Atualizar Cliente</h2>
+
+        <input type="hidden" id="id_cliente">
+
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Nome</label>
+            <input id="nome" class="form-control" value="Cliente Teste">
+          </div>
+
+          <div class="col-md-4 mb-3">
+            <label class="form-label">E-mail</label>
+            <input id="email" class="form-control" value="cliente@email.com">
+          </div>
+
+          <div class="col-md-2 mb-3">
+            <label class="form-label">Telefone</label>
+            <input id="telefone" class="form-control" value="(12) 99999-0000">
+          </div>
+
+          <div class="col-md-2 mb-3">
+            <label class="form-label">CPF</label>
+            <input id="cpf" class="form-control" value="333.333.333-33">
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Ativo</label>
+          <select id="ativo" class="form-select">
+            <option value="true">Sim</option>
+            <option value="false">Não</option>
+          </select>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button id="btnSalvar" class="btn btn-success">Salvar</button>
+          <button id="btnLimpar" class="btn btn-secondary">Limpar</button>
+          <button id="btnListar" class="btn btn-primary">Listar Clientes</button>
+        </div>
+
+        <div class="alert alert-warning mt-3">
+          Faça login primeiro em <strong>/login</strong>. As rotas de clientes exigem token.
+        </div>
+
+        <pre id="resposta" class="mt-3 bg-dark text-white p-3 rounded small"></pre>
+      </div>
+    </div>
+
+    <div class="card shadow">
+      <div class="card-body">
+        <h2 class="h5">Lista de Clientes</h2>
+        <div class="table-responsive">
+          <table class="table table-striped table-bordered align-middle">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nome</th>
+                <th>E-mail</th>
+                <th>Telefone</th>
+                <th>CPF</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tabelaClientes"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const resposta = document.getElementById('resposta');
+    const tabelaClientes = document.getElementById('tabelaClientes');
+
+    function getToken() {
+      return localStorage.getItem('token');
+    }
+
+    function montarCliente() {
+      return {
+        nome: document.getElementById('nome').value,
+        email: document.getElementById('email').value,
+        telefone: document.getElementById('telefone').value,
+        cpf: document.getElementById('cpf').value,
+        ativo: document.getElementById('ativo').value === 'true'
+      };
+    }
+
+    function limparFormulario() {
+      document.getElementById('id_cliente').value = '';
+      document.getElementById('nome').value = '';
+      document.getElementById('email').value = '';
+      document.getElementById('telefone').value = '';
+      document.getElementById('cpf').value = '';
+      document.getElementById('ativo').value = 'true';
+    }
+
+    async function listarClientes() {
+      const token = getToken();
+
+      if (!token) {
+        resposta.textContent = 'Faça login antes de listar clientes.';
+        return;
+      }
+
+      const response = await fetch('/api/clientes', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const json = await response.json();
+      resposta.textContent = JSON.stringify(json, null, 2);
+      tabelaClientes.innerHTML = '';
+
+      if (!json.success) return;
+
+      json.data.forEach(cliente => {
+        const tr = document.createElement('tr');
+
+        tr.innerHTML = `
+          <td>${cliente.id_cliente}</td>
+          <td>${cliente.nome}</td>
+          <td>${cliente.email || ''}</td>
+          <td>${cliente.telefone || ''}</td>
+          <td>${cliente.cpf || ''}</td>
+          <td>
+            <button class="btn btn-sm btn-warning" onclick='editarCliente(${JSON.stringify(cliente)})'>Editar</button>
+            <button class="btn btn-sm btn-danger" onclick='excluirCliente(${cliente.id_cliente})'>Excluir</button>
+          </td>
+        `;
+
+        tabelaClientes.appendChild(tr);
+      });
+    }
+
+    function editarCliente(cliente) {
+      document.getElementById('id_cliente').value = cliente.id_cliente;
+      document.getElementById('nome').value = cliente.nome;
+      document.getElementById('email').value = cliente.email || '';
+      document.getElementById('telefone').value = cliente.telefone || '';
+      document.getElementById('cpf').value = cliente.cpf || '';
+      document.getElementById('ativo').value = cliente.ativo ? 'true' : 'false';
+    }
+
+    async function salvarCliente() {
+      const idCliente = document.getElementById('id_cliente').value;
+      const token = getToken();
+
+      if (!token) {
+        resposta.textContent = 'Faça login antes de cadastrar ou editar clientes.';
+        return;
+      }
+
+      const metodo = idCliente ? 'PUT' : 'POST';
+      const url = idCliente ? `/api/clientes/${idCliente}` : '/api/clientes';
+
+      const response = await fetch(url, {
+        method: metodo,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(montarCliente())
+      });
+
+      const json = await response.json();
+      resposta.textContent = JSON.stringify(json, null, 2);
+
+      if (json.success) {
+        limparFormulario();
+        listarClientes();
+      }
+    }
+
+    async function excluirCliente(idCliente) {
+      const token = getToken();
+
+      if (!token) {
+        resposta.textContent = 'Faça login antes de excluir clientes.';
+        return;
+      }
+
+      if (!confirm('Deseja realmente excluir este cliente?')) return;
+
+      const response = await fetch(`/api/clientes/${idCliente}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const json = await response.json();
+      resposta.textContent = JSON.stringify(json, null, 2);
+
+      if (json.success) {
+        listarClientes();
+      }
+    }
+
+    document.getElementById('btnSalvar').addEventListener('click', salvarCliente);
+    document.getElementById('btnLimpar').addEventListener('click', limparFormulario);
+    document.getElementById('btnListar').addEventListener('click', listarClientes);
+  </script>
+</body>
+</html>
