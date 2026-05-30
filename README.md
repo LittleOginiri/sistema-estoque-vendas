@@ -881,7 +881,7 @@ v12.3
 Projeto desenvolvido por:
 
 ```text
-João Victor
+João Victor de Campos e João Pedro Martins
 ```
 
 Disciplina:
