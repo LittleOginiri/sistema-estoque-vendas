@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Vendas - Estoque e Vendas</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link 
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" 
+    rel="stylesheet">
+</head>
+<body class="bg-light">
+  <main class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h1 class="h3">Vendas</h1>
+      <div>
+        <a href="/login" class="btn btn-outline-primary">Login</a>
+        <a href="/produtos" class="btn btn-outline-secondary">Produtos</a>
+        <a href="/clientes" class="btn btn-outline-secondary">Clientes</a>
+      </div>
+    </div>
+
+    <div class="card shadow mb-4">
+      <div class="card-body">
+        <h2 class="h5">Cadastrar Venda</h2>
+
+        <div class="row">
+          <div class="col-md-3 mb-3">
+            <label class="form-label">ID Cliente</label>
+            <input id="id_cliente" class="form-control" value="1">
+          </div>
+
+          <div class="col-md-3 mb-3">
+            <label class="form-label">ID Produto 1</label>
+            <input id="id_produto_1" class="form-control" value="1">
+          </div>
+
+          <div class="col-md-3 mb-3">
+            <label class="form-label">Quantidade 1</label>
+            <input id="quantidade_1" class="form-control" value="1">
+          </div>
+
+          <div class="col-md-3 mb-3">
+            <label class="form-label">ID Produto 2 opcional</label>
+            <input id="id_produto_2" class="form-control" placeholder="Ex: 2">
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-3 mb-3">
+            <label class="form-label">Quantidade 2 opcional</label>
+            <input id="quantidade_2" class="form-control" placeholder="Ex: 1">
+          </div>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button id="btnSalvar" class="btn btn-success">Cadastrar Venda</button>
+          <button id="btnListar" class="btn btn-primary">Listar Vendas</button>
+        </div>
+
+        <div class="alert alert-warning mt-3">
+          Faça login primeiro em <strong>/login</strong>. Ao cadastrar venda, o estoque dos produtos será reduzido.
+        </div>
+
+        <pre id="resposta" class="mt-3 bg-dark text-white p-3 rounded small"></pre>
+      </div>
+    </div>
+
+    <div class="card shadow">
+      <div class="card-body">
+        <h2 class="h5">Lista de Vendas</h2>
+        <div class="table-responsive">
+          <table class="table table-striped table-bordered align-middle">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Cliente</th>
+                <th>Usuário</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th>Data</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tabelaVendas"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const resposta = document.getElementById('resposta');
+    const tabelaVendas = document.getElementById('tabelaVendas');
+
+    function getToken() {
+      return localStorage.getItem('token');
+    }
+
+    function montarVenda() {
+      const itens = [];
+
+      itens.push({
+        id_produto: Number(document.getElementById('id_produto_1').value),
+        quantidade: Number(document.getElementById('quantidade_1').value)
+      });
+
+      const idProduto2 = document.getElementById('id_produto_2').value;
+      const quantidade2 = document.getElementById('quantidade_2').value;
+
+      if (idProduto2 && quantidade2) {
+        itens.push({
+          id_produto: Number(idProduto2),
+          quantidade: Number(quantidade2)
+        });
+      }
+
+      return {
+        id_cliente: Number(document.getElementById('id_cliente').value),
+        itens
+      };
+    }
+
+    async function listarVendas() {
+      const token = getToken();
+
+      if (!token) {
+        resposta.textContent = 'Faça login antes de listar vendas.';
+        return;
+      }
+
+      const response = await fetch('/api/vendas', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const json = await response.json();
+      resposta.textContent = JSON.stringify(json, null, 2);
+      tabelaVendas.innerHTML = '';
+
+      if (!json.success) return;
+
+      json.data.forEach(venda => {
+        const tr = document.createElement('tr');
+
+        tr.innerHTML = `
+          <td>${venda.id_venda}</td>
+          <td>${venda.cliente}</td>
+          <td>${venda.usuario}</td>
+          <td>R$ ${venda.total}</td>
+          <td>${venda.status}</td>
+          <td>${venda.data_venda}</td>
+          <td>
+            <button class="btn btn-sm btn-info" onclick="buscarVenda(${venda.id_venda})">Ver</button>
+            <button class="btn btn-sm btn-danger" onclick="cancelarVenda(${venda.id_venda})">Cancelar</button>
+          </td>
+        `;
+
+        tabelaVendas.appendChild(tr);
+      });
+    }
+
+    async function salvarVenda() {
+      const token = getToken();
+
+      if (!token) {
+        resposta.textContent = 'Faça login antes de cadastrar vendas.';
+        return;
+      }
+
+      const response = await fetch('/api/vendas', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(montarVenda())
+      });
+
+      const json = await response.json();
+      resposta.textContent = JSON.stringify(json, null, 2);
+
+      if (json.success) {
+        listarVendas();
+      }
+    }
+
+    async function buscarVenda(idVenda) {
+      const token = getToken();
+
+      const response = await fetch(`/api/vendas/${idVenda}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const json = await response.json();
+      resposta.textContent = JSON.stringify(json, null, 2);
+    }
+
+    async function cancelarVenda(idVenda) {
+      const token = getToken();
+
+      if (!confirm('Deseja realmente cancelar esta venda? O estoque será devolvido.')) return;
+
+      const response = await fetch(`/api/vendas/${idVenda}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const json = await response.json();
+      resposta.textContent = JSON.stringify(json, null, 2);
+
+      if (json.success) {
+        listarVendas();
+      }
+    }
+
+    document.getElementById('btnSalvar').addEventListener('click', salvarVenda);
+    document.getElementById('btnListar').addEventListener('click', listarVendas);
+  </script>
+</body>
+</html>
