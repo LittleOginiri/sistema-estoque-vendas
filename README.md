@@ -476,7 +476,3 @@ v12 - Dashboard com gráficos
 - As rotas administrativas exigem token JWT de usuário ADMIN.
 
 ---
-
-## Autor
-
-Projeto desenvolvido por **João Victor** para a disciplina **Programação para Internet**.
