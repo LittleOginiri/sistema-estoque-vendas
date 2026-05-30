@@ -801,16 +801,9 @@ estoque-vendas/
 
 ## 14. Observações importantes
 
-O arquivo `.env` não deve ser enviado ao GitHub.
+O arquivo `.env` não deve ser enviado a outra pessoa.
 
 A pasta `node_modules` também não deve ser enviada.
-
-Antes de entregar ou subir o projeto, verifique se o `.gitignore` contém:
-
-```text
-node_modules/
-.env
-```
 
 ---
 
