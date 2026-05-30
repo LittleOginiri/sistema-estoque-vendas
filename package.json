@@ -1,6 +1,6 @@
 {
   "name": "estoque-vendas-fullstack",
-  "version": "0.12.0",
+  "version": "0.12.3",
   "description": "Sistema de Controle de Estoque e Vendas - Projeto Full Stack",
   "main": "app.js",
   "scripts": {

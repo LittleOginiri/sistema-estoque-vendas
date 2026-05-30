@@ -40,7 +40,7 @@ app.get('/', (request, response) => {
   response.status(200).json({
     success: true,
     message: 'API do Sistema de Estoque e Vendas está funcionando.',
-    versao: '0.12.0',
+    versao: '0.12.3',
     rotas_teste: [
       '/api/health',
       '/api/teste/mysql',

@@ -10,44 +10,36 @@
 </head>
 <body class="bg-light">
   <main class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h1 class="h3">Vendas</h1>
-      <div>
-        <a href="/login" class="btn btn-outline-primary">Login</a>
-        <a href="/produtos" class="btn btn-outline-secondary">Produtos</a>
-        <a href="/clientes" class="btn btn-outline-secondary">Clientes</a>
-      </div>
-    </div>
+    <h1 class="h3 mb-3">Vendas</h1>
 
     <div class="card shadow mb-4">
       <div class="card-body">
         <h2 class="h5">Cadastrar Venda</h2>
+        <p class="text-muted small">Campos com <span class="text-danger">*</span> são obrigatórios.</p>
 
         <div class="row">
           <div class="col-md-3 mb-3">
-            <label class="form-label">ID Cliente</label>
-            <input id="id_cliente" class="form-control" value="1">
+            <label class="form-label">ID Cliente <span class="text-danger">*</span></label>
+            <input id="id_cliente" class="form-control" value="1" placeholder="Ex: 1">
           </div>
 
           <div class="col-md-3 mb-3">
-            <label class="form-label">ID Produto 1</label>
-            <input id="id_produto_1" class="form-control" value="1">
+            <label class="form-label">ID Produto 1 <span class="text-danger">*</span></label>
+            <input id="id_produto_1" class="form-control" value="1" placeholder="Ex: 1">
           </div>
 
           <div class="col-md-3 mb-3">
-            <label class="form-label">Quantidade 1</label>
-            <input id="quantidade_1" class="form-control" value="1">
+            <label class="form-label">Quantidade 1 <span class="text-danger">*</span></label>
+            <input id="quantidade_1" class="form-control" value="1" placeholder="Ex: 2">
           </div>
 
           <div class="col-md-3 mb-3">
-            <label class="form-label">ID Produto 2 opcional</label>
+            <label class="form-label">ID Produto 2</label>
             <input id="id_produto_2" class="form-control" placeholder="Ex: 2">
           </div>
-        </div>
 
-        <div class="row">
           <div class="col-md-3 mb-3">
-            <label class="form-label">Quantidade 2 opcional</label>
+            <label class="form-label">Quantidade 2</label>
             <input id="quantidade_2" class="form-control" placeholder="Ex: 1">
           </div>
         </div>
@@ -57,11 +49,10 @@
           <button id="btnListar" class="btn btn-primary">Listar Vendas</button>
         </div>
 
-        <div class="alert alert-warning mt-3">
-          Faça login primeiro em <strong>/login</strong>. Ao cadastrar venda, o estoque dos produtos será reduzido.
-        </div>
+        <div id="feedback" class="alert alert-info mt-3 d-none"></div>
 
-        <pre id="resposta" class="mt-3 bg-dark text-white p-3 rounded small"></pre>
+        <button id="btnToggleJson" class="btn btn-sm btn-outline-dark mt-2">Mostrar JSON</button>
+        <pre id="resposta" class="mt-2 bg-dark text-white p-3 rounded small"></pre>
       </div>
     </div>
 
@@ -88,12 +79,21 @@
     </div>
   </main>
 
+  <script src="/js/auth.js"></script>
+  <script src="/js/navbar.js"></script>
+  <script src="/js/ui.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
+    if (exigirLogin()) montarNavbar('vendas');
+    configurarPainelJson('btnToggleJson', 'resposta');
+
     const resposta = document.getElementById('resposta');
     const tabelaVendas = document.getElementById('tabelaVendas');
 
-    function getToken() {
-      return localStorage.getItem('token');
+    function feedback(texto, tipo = 'info') {
+      const div = document.getElementById('feedback');
+      div.className = `alert alert-${tipo} mt-3`;
+      div.textContent = texto;
     }
 
     function montarVenda() {
@@ -108,41 +108,35 @@
       const quantidade2 = document.getElementById('quantidade_2').value;
 
       if (idProduto2 && quantidade2) {
-        itens.push({
-          id_produto: Number(idProduto2),
-          quantidade: Number(quantidade2)
-        });
+        itens.push({ id_produto: Number(idProduto2), quantidade: Number(quantidade2) });
       }
 
-      return {
-        id_cliente: Number(document.getElementById('id_cliente').value),
-        itens
-      };
+      return { id_cliente: Number(document.getElementById('id_cliente').value), itens };
+    }
+
+    function validarVenda() {
+      if (!document.getElementById('id_cliente').value ||
+          !document.getElementById('id_produto_1').value ||
+          !document.getElementById('quantidade_1').value) {
+        feedback('Preencha ID Cliente, ID Produto 1 e Quantidade 1.', 'warning');
+        return false;
+      }
+      return true;
     }
 
     async function listarVendas() {
-      const token = getToken();
+      const response = await fetch('/api/vendas', { headers: montarHeaderAutorizacao() });
+      const json = await response.json();
+      mostrarJson('resposta', json);
+      tabelaVendas.innerHTML = '';
 
-      if (!token) {
-        resposta.textContent = 'Faça login antes de listar vendas.';
+      if (!json.success) {
+        feedback(json.message || 'Erro ao listar vendas.', 'danger');
         return;
       }
 
-      const response = await fetch('/api/vendas', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      const json = await response.json();
-      resposta.textContent = JSON.stringify(json, null, 2);
-      tabelaVendas.innerHTML = '';
-
-      if (!json.success) return;
-
       json.data.forEach(venda => {
         const tr = document.createElement('tr');
-
         tr.innerHTML = `
           <td>${venda.id_venda}</td>
           <td>${venda.cliente}</td>
@@ -155,71 +149,63 @@
             <button class="btn btn-sm btn-danger" onclick="cancelarVenda(${venda.id_venda})">Cancelar</button>
           </td>
         `;
-
         tabelaVendas.appendChild(tr);
       });
+
+      feedback(`${json.data.length} venda(s) carregada(s).`, 'success');
     }
 
     async function salvarVenda() {
-      const token = getToken();
-
-      if (!token) {
-        resposta.textContent = 'Faça login antes de cadastrar vendas.';
-        return;
-      }
+      if (!validarVenda()) return;
 
       const response = await fetch('/api/vendas', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers: { 'Content-Type': 'application/json', ...montarHeaderAutorizacao() },
         body: JSON.stringify(montarVenda())
       });
 
       const json = await response.json();
-      resposta.textContent = JSON.stringify(json, null, 2);
+      mostrarJson('resposta', json);
 
       if (json.success) {
+        feedback('Venda cadastrada com sucesso. Estoque atualizado.', 'success');
         listarVendas();
+      } else {
+        feedback(json.message || 'Erro ao cadastrar venda.', 'danger');
       }
     }
 
     async function buscarVenda(idVenda) {
-      const token = getToken();
-
-      const response = await fetch(`/api/vendas/${idVenda}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
+      const response = await fetch(`/api/vendas/${idVenda}`, { headers: montarHeaderAutorizacao() });
       const json = await response.json();
-      resposta.textContent = JSON.stringify(json, null, 2);
+      mostrarJson('resposta', json);
+      feedback('Detalhes da venda carregados no painel JSON.', 'info');
+      document.getElementById('resposta').style.display = 'block';
+      document.getElementById('btnToggleJson').textContent = 'Esconder JSON';
     }
 
     async function cancelarVenda(idVenda) {
-      const token = getToken();
-
       if (!confirm('Deseja realmente cancelar esta venda? O estoque será devolvido.')) return;
 
       const response = await fetch(`/api/vendas/${idVenda}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: montarHeaderAutorizacao()
       });
 
       const json = await response.json();
-      resposta.textContent = JSON.stringify(json, null, 2);
+      mostrarJson('resposta', json);
 
       if (json.success) {
+        feedback('Venda cancelada com sucesso. Estoque devolvido.', 'success');
         listarVendas();
+      } else {
+        feedback(json.message || 'Erro ao cancelar venda.', 'danger');
       }
     }
 
     document.getElementById('btnSalvar').addEventListener('click', salvarVenda);
     document.getElementById('btnListar').addEventListener('click', listarVendas);
+    listarVendas();
   </script>
 </body>
 </html>
