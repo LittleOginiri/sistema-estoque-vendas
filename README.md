@@ -373,7 +373,7 @@ cd sistema-estoque-vendas
 Se estiver usando uma pasta com espaço no nome, use aspas:
 
 ```bash
-cd "/home/joao/Área de trabalho/estoque-vendas-v12-3"
+cd "/home/nome/Área de trabalho/estoque-vendas"
 ```
 
 ### 8.4 Instalar dependências
