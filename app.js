@@ -19,7 +19,7 @@ const relatorioRoutes = require('./src/routes/RelatorioRoutes');
 const dashboardRoutes = require('./src/routes/DashboardRoutes');
 
 const logMiddleware = require('./src/middlewares/LogMiddleware');
-const logService = require('./src/services/LogService');
+const ErrorMiddleware = require('./src/middlewares/ErrorMiddleware');
 
 const app = express();
 const portaServico = process.env.PORT || 3000;
@@ -135,28 +135,8 @@ app.use((request, response) => {
   });
 });
 
-app.use(async (error, request, response, next) => {
-  console.error('Erro global:', error);
-
-  const statusCode = error.status || 500;
-
-  await logService.registrarLog({
-    acao: 'ERRO_EXCECAO',
-    endpoint: request.originalUrl,
-    metodo: request.method,
-    status_code: statusCode,
-    ip: request.ip || request.socket.remoteAddress,
-    usuario: request.usuario || null,
-    mensagem: error.message || 'Erro interno no servidor.',
-    erro: error.stack,
-    body: request.method === 'GET' ? null : request.body
-  });
-
-  response.status(statusCode).json({
-    success: false,
-    message: error.message || 'Erro interno no servidor.'
-  });
-});
+// O ErrorMiddleware deve ficar por último, depois de todas as rotas
+app.use(ErrorMiddleware);
 
 app.listen(portaServico, () => {
   console.log(`API rodando em: http://localhost:${portaServico}`);
