@@ -4,6 +4,9 @@ Projeto desenvolvido para a disciplina **Programação para Internet**, com o ob
 
 A aplicação foi construída usando **Node.js**, **Express**, **MySQL**, **MongoDB**, **HTML**, **CSS**, **JavaScript** e **Bootstrap**, seguindo uma organização em camadas para separar as responsabilidades do sistema.
 
+Video apresentação (PowerPoint): https://youtu.be/YfZGBnk9BPI
+Video demonstração (Linux/Windows): https://youtu.be/w7QYlAl7Er0
+
 ---
 
 ## 1. Introdução à aplicação
@@ -860,12 +863,6 @@ O projeto está funcional com:
 - PDF;
 - documentação;
 - navegação no frontend.
-
-Versão atual:
-
-```text
-v12.3
-```
 
 ---
 
