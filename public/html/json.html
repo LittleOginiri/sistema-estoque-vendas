@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>JSON - Estoque e Vendas</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link 
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" 
+    rel="stylesheet">
+</head>
+<body class="bg-light">
+  <main class="container py-4">
+    <h1 class="h3 mb-3">Importação e Exportação JSON</h1>
+
+    <div class="card shadow mb-4">
+      <div class="card-body">
+        <h2 class="h5">Exportar dados para JSON</h2>
+        <div class="row align-items-end">
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Entidade</label>
+            <select id="entidade_export" class="form-select">
+              <option value="usuarios">usuarios</option>
+              <option value="clientes">clientes</option>
+              <option value="categorias">categorias</option>
+              <option value="produtos">produtos</option>
+              <option value="vendas">vendas</option>
+              <option value="itens_venda">itens_venda</option>
+            </select>
+          </div>
+          <div class="col-md-4 mb-3">
+            <button id="btnExportar" class="btn btn-success">Exportar JSON</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card shadow mb-4">
+      <div class="card-body">
+        <h2 class="h5">Importar dados de JSON</h2>
+
+        <div class="row align-items-end">
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Entidade</label>
+            <select id="entidade_import" class="form-select">
+              <option value="clientes">clientes</option>
+              <option value="categorias">categorias</option>
+              <option value="produtos">produtos</option>
+              <option value="usuarios">usuarios</option>
+            </select>
+          </div>
+
+          <div class="col-md-5 mb-3">
+            <label class="form-label">Arquivo .json</label>
+            <input id="arquivo_json" type="file" class="form-control" accept=".json,application/json">
+          </div>
+
+          <div class="col-md-3 mb-3">
+            <button id="btnImportar" class="btn btn-primary">Importar JSON</button>
+          </div>
+        </div>
+
+        <button id="btnToggleJson" class="btn btn-sm btn-outline-dark mt-2">Mostrar JSON</button>
+    <pre id="resposta" class="mt-3 bg-dark text-white p-3 rounded small"></pre>
+      </div>
+    </div>
+  </main>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/navbar.js"></script>
+  <script src="/js/ui.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    if (exigirLogin()) {
+      montarNavbar('json');
+      configurarPainelJson('btnToggleJson', 'resposta');
+    }
+
+    const resposta = document.getElementById('resposta');
+
+    function baixarBlob(blob, nomeArquivo) {
+      const link = document.createElement('a');
+      const objectUrl = URL.createObjectURL(blob);
+      link.href = objectUrl;
+      link.download = nomeArquivo;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(objectUrl);
+    }
+
+    async function exportarJson() {
+      const entidade = document.getElementById('entidade_export').value;
+
+      const response = await fetch(`/api/json/export/${entidade}`, {
+        headers: montarHeaderAutorizacao()
+      });
+
+      if (!response.ok) {
+        resposta.textContent = await response.text();
+        return;
+      }
+
+      const blob = await response.blob();
+      baixarBlob(blob, `${entidade}.json`);
+      resposta.textContent = `Arquivo ${entidade}.json exportado com sucesso.`;
+    }
+
+    async function importarJson() {
+      const entidade = document.getElementById('entidade_import').value;
+      const arquivo = document.getElementById('arquivo_json').files[0];
+
+      if (!arquivo) {
+        resposta.textContent = 'Selecione um arquivo JSON.';
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('arquivo_json', arquivo);
+
+      const response = await fetch(`/api/json/import/${entidade}`, {
+        method: 'POST',
+        headers: montarHeaderAutorizacao(),
+        body: formData
+      });
+
+      const json = await response.json();
+      mostrarJson('resposta', json);
+    }
+
+    document.getElementById('btnExportar').addEventListener('click', exportarJson);
+    document.getElementById('btnImportar').addEventListener('click', importarJson);
+  </script>
+</body>
+</html>

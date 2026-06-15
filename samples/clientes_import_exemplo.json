@@ -1,0 +1,16 @@
+[
+  {
+    "nome": "Cliente Importado JSON",
+    "email": "cliente.importado@email.com",
+    "telefone": "(12) 90000-1111",
+    "cpf": "555.555.555-55",
+    "ativo": true
+  },
+  {
+    "nome": "Cliente Importado Dois",
+    "email": "cliente2.importado@email.com",
+    "telefone": "(12) 90000-2222",
+    "cpf": "666.666.666-66",
+    "ativo": true
+  }
+]

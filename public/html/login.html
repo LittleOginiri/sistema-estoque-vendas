@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Login - Estoque e Vendas</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link 
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" 
+    rel="stylesheet">
+</head>
+<body class="bg-light">
+  <main class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-md-5">
+        <div class="card shadow">
+          <div class="card-body">
+            <h1 class="h3 mb-3 text-center">Login</h1>
+
+            <div class="mb-3">
+              <label class="form-label">E-mail <span class="text-danger">*</span></label>
+              <input id="email" class="form-control" value="admin@admin.com" placeholder="Ex: admin@admin.com">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Senha <span class="text-danger">*</span></label>
+              <input id="senha" type="password" class="form-control" value="123456" placeholder="Ex: 123456">
+            </div>
+
+            <button id="btnLogin" class="btn btn-primary w-100">Entrar</button>
+
+            <div class="text-center mt-3">
+              <button id="btnEsqueciSenha" class="btn btn-link p-0" type="button">
+                Esqueceu sua senha?
+              </button>
+            </div>
+
+            <div id="boxSenha" class="alert alert-secondary mt-3 d-none">
+              <strong>Usuários de teste:</strong>
+              <hr>
+              <p class="mb-1"><strong>Administrador:</strong></p>
+              <p class="mb-2">
+                E-mail: <code>admin@admin.com</code><br>
+                Senha: <code>123456</code>
+              </p>
+
+              <p class="mb-1"><strong>Usuário comum:</strong></p>
+              <p class="mb-0">
+                E-mail: <code>usuario@teste.com</code><br>
+                Senha: <code>123456</code>
+              </p>
+            </div>
+
+            <div id="feedback" class="alert alert-info mt-3 d-none"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="/js/auth.js"></script>
+  <script>
+    function feedback(texto, tipo = 'info') {
+      const div = document.getElementById('feedback');
+      div.className = `alert alert-${tipo} mt-3`;
+      div.textContent = texto;
+    }
+
+    async function login() {
+      const email = document.getElementById('email').value;
+      const senha = document.getElementById('senha').value;
+
+      if (!email || !senha) {
+        feedback('Preencha e-mail e senha.', 'warning');
+        return;
+      }
+
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, senha })
+      });
+
+      const json = await response.json();
+
+      if (json.success) {
+        salvarSessaoLogin(json.data || json);
+        feedback('Login realizado com sucesso. Redirecionando...', 'success');
+        setTimeout(() => window.location.href = '/dashboard', 600);
+      } else {
+        feedback(json.message || 'E-mail ou senha inválidos.', 'danger');
+      }
+    }
+
+    function alternarBoxSenha() {
+      const box = document.getElementById('boxSenha');
+      box.classList.toggle('d-none');
+    }
+
+    document.getElementById('btnLogin').addEventListener('click', login);
+    document.getElementById('btnEsqueciSenha').addEventListener('click', alternarBoxSenha);
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        login();
+      }
+    });
+  </script>
+</body>
+</html>

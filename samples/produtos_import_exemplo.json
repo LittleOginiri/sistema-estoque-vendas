@@ -1,0 +1,11 @@
+[
+  {
+    "id_categoria": 1,
+    "nome": "Produto Importado JSON",
+    "descricao": "Produto criado por importação JSON",
+    "preco": 35.9,
+    "estoque": 10,
+    "imagem": null,
+    "ativo": true
+  }
+]
