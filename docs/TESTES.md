@@ -4,7 +4,7 @@ Este documento resume os testes feitos durante o desenvolvimento do projeto.
 
 ## Ambiente
 
-O projeto foi testado em ambiente Linux com:
+O projeto foi testado em Linux e Windows com:
 
 ```text
 Node.js
@@ -17,29 +17,7 @@ curl
 Bruno/Insomnia
 ```
 
-## Testes de ambiente
-
-Comandos usados:
-
-```bash
-node -v
-npm -v
-mysql --version
-git --version
-sudo systemctl status mysql
-```
-
-Resultado esperado:
-
-- Node instalado;
-- npm instalado;
-- MySQL ativo;
-- Git instalado;
-- projeto rodando em `localhost:3000`.
-
-## Teste de inicialização
-
-Comando:
+## Inicialização
 
 ```bash
 npm install
@@ -53,7 +31,7 @@ API rodando em: http://localhost:3000
 MongoDB conectado com sucesso.
 ```
 
-## Teste de saúde da API
+## Saúde da API
 
 ```text
 GET /api/health
@@ -67,18 +45,7 @@ Resultado esperado:
 }
 ```
 
-## Teste de conexão MySQL
-
-```text
-GET /api/teste/mysql
-```
-
-Resultado esperado:
-
-- conexão realizada;
-- banco `estoque_vendas` acessível.
-
-## Teste de login
+## Login
 
 ```text
 POST /api/auth/login
@@ -95,35 +62,104 @@ Body:
 
 Resultado esperado:
 
-- retorno de token JWT;
+- token JWT retornado;
 - dados do usuário administrador.
 
-## Teste de rotas protegidas
+## Middlewares
 
-```text
-GET /api/auth/me
-```
+### AuthMiddleware
 
-Header:
+Testes:
 
-```text
-Authorization: Bearer TOKEN
-```
+- acessar rota protegida sem token;
+- acessar rota protegida com token válido;
+- acessar rota administrativa com ADMIN;
+- tentar acessar rota administrativa sem permissão.
 
 Resultado esperado:
 
-- usuário autenticado retornado;
-- erro caso não envie token.
+- sem token: bloqueado;
+- token válido: liberado;
+- ADMIN: liberado;
+- sem permissão: erro 403.
+
+### LogMiddleware
+
+Testes:
+
+- login gerando log;
+- acesso às rotas gerando log;
+- cadastro, edição e exclusão gerando log;
+- erro gerando log.
+
+Resultado esperado:
+
+- logs salvos no MongoDB;
+- registro com endpoint, método, status, usuário, IP e mensagem.
+
+### ValidationMiddleware
+
+Testes:
+
+- cadastrar produto sem campos obrigatórios;
+- cadastrar cliente sem nome;
+- cadastrar categoria sem nome;
+- criar venda sem itens;
+- login sem email ou senha.
+
+Resultado esperado:
+
+- requisição bloqueada antes do Controller;
+- mensagem de validação retornada.
+
+### UploadMiddleware
+
+Testes:
+
+- cadastrar produto com imagem JPG, PNG ou WEBP;
+- editar produto enviando nova imagem;
+- verificar pré-visualização no formulário;
+- verificar imagem exibida na tabela;
+- verificar arquivo salvo em `uploads/produtos`;
+- tentar enviar formato inválido.
+
+Resultado esperado:
+
+- imagem aceita nos formatos permitidos;
+- arquivo salvo no servidor;
+- caminho salvo no campo `imagem`;
+- imagem exibida na listagem;
+- formato inválido bloqueado.
+
+### ErrorMiddleware
+
+Testes:
+
+- gerar erro em rota/operação inválida;
+- verificar JSON padronizado;
+- verificar log de erro no MongoDB.
+
+Exemplo esperado:
+
+```json
+{
+  "success": false,
+  "message": "Mensagem do erro"
+}
+```
 
 ## CRUD Produtos
 
-Testes realizados:
+Testes:
 
 - listar produtos;
 - buscar produto por ID;
 - criar produto;
 - atualizar produto;
-- excluir produto.
+- excluir produto;
+- cadastrar produto com imagem;
+- exibir imagem na tabela;
+- pré-visualizar imagem no formulário.
 
 Rotas:
 
@@ -137,7 +173,7 @@ DELETE /api/produtos/:id
 
 ## CRUD Clientes
 
-Testes realizados:
+Testes:
 
 - listar clientes;
 - buscar cliente por ID;
@@ -149,7 +185,7 @@ Foi validado que cliente com venda vinculada não é excluído diretamente.
 
 ## CRUD Categorias
 
-Testes realizados:
+Testes:
 
 - listar categorias;
 - buscar categoria por ID;
@@ -161,7 +197,7 @@ Foi validado que categoria com produto vinculado não é excluída diretamente.
 
 ## Vendas
 
-Testes realizados:
+Testes:
 
 - criar venda com múltiplos itens;
 - calcular total automaticamente;
@@ -178,24 +214,19 @@ Resultado validado:
 
 ## MongoDB e logs
 
-Testes realizados:
-
-- login gerando log;
-- acesso às rotas gerando log;
-- erro gerando log;
-- consulta dos logs;
-- filtros de logs.
-
-Rotas:
-
 ```text
 GET /api/logs
 GET /api/logs/:id
 ```
 
-## Exportação XML
+Testes:
 
-Teste realizado:
+- login gerando log;
+- acesso às rotas gerando log;
+- erro gerando log;
+- filtros de logs.
+
+## Exportação XML
 
 ```text
 GET /api/logs/export/xml
@@ -203,13 +234,11 @@ GET /api/logs/export/xml
 
 Resultado esperado:
 
-- download de arquivo XML;
-- logs listados em estrutura XML;
+- download do XML;
+- logs em estrutura XML;
 - filtros funcionando.
 
 ## Importação e exportação JSON
-
-Testes realizados:
 
 ```text
 GET /api/json/export/clientes
@@ -224,8 +253,6 @@ Resultado esperado:
 
 ## Relatórios em PDF
 
-Testes realizados:
-
 ```text
 GET /api/relatorios/vendas
 GET /api/relatorios/vendas/pdf
@@ -233,19 +260,17 @@ GET /api/relatorios/vendas/pdf
 
 Resultado esperado:
 
-- JSON do relatório retornado;
+- JSON retornado;
 - PDF baixado corretamente;
 - filtros por status funcionando.
 
 ## Dashboard
 
-Testes realizados:
-
 ```text
 GET /api/dashboard/completo
 ```
 
-E tela:
+Tela:
 
 ```text
 /dashboard
@@ -256,22 +281,6 @@ Resultado esperado:
 - cards carregados;
 - gráficos exibidos;
 - produtos com baixo estoque listados.
-
-## Testes pelo terminal
-
-Exemplo de login com curl:
-
-```bash
-TOKEN=$(curl -s -X POST http://localhost:3000/api/auth/login \
--H "Content-Type: application/json" \
--d '{"email":"admin@admin.com","senha":"123456"}' | grep -o '"token":"[^"]*' | cut -d'"' -f4)
-```
-
-Teste do dashboard:
-
-```bash
-curl -H "Authorization: Bearer $TOKEN" http://localhost:3000/api/dashboard/completo
-```
 
 ## Resultado final
 
@@ -284,6 +293,8 @@ Os testes principais foram validados:
 - CRUDs funcionando;
 - vendas funcionando;
 - logs funcionando;
+- middlewares funcionando;
+- upload e exibição de imagens funcionando;
 - exportações funcionando;
 - relatórios funcionando;
 - dashboard funcionando.
