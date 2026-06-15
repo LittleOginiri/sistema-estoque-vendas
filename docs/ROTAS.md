@@ -45,7 +45,51 @@ PUT /api/produtos/:id
 DELETE /api/produtos/:id
 ```
 
-Rotas de criação, alteração e exclusão exigem token e permissão ADMIN.
+Criação, alteração e exclusão exigem token e permissão ADMIN.
+
+### Cadastro/edição de produto com imagem
+
+As rotas `POST /api/produtos` e `PUT /api/produtos/:id` usam `multipart/form-data` porque podem receber imagem.
+
+Campos:
+
+```text
+id_categoria
+nome
+descricao
+preco
+estoque
+imagem
+```
+
+O campo do arquivo deve se chamar:
+
+```text
+imagem
+```
+
+Exemplo conceitual:
+
+```text
+id_categoria: 1
+nome: Mouse Gamer
+descricao: Mouse USB com RGB
+preco: 89.90
+estoque: 25
+imagem: arquivo.png
+```
+
+O backend salva a imagem em:
+
+```text
+uploads/produtos/
+```
+
+E grava no MySQL apenas o caminho:
+
+```text
+/uploads/produtos/nome-do-arquivo.png
+```
 
 ## Clientes
 
@@ -80,35 +124,21 @@ POST /api/vendas
 DELETE /api/vendas/:id
 ```
 
-### Exemplo de criação de venda
+Exemplo de criação:
 
 ```json
 {
   "id_cliente": 1,
   "itens": [
-    {
-      "id_produto": 1,
-      "quantidade": 1
-    },
-    {
-      "id_produto": 2,
-      "quantidade": 1
-    }
+    { "id_produto": 1, "quantidade": 1 },
+    { "id_produto": 2, "quantidade": 1 }
   ]
 }
 ```
 
-Ao criar uma venda, o sistema:
+Ao criar venda, o sistema calcula o total, grava a venda, grava os itens e reduz o estoque.
 
-- calcula o total;
-- grava a venda;
-- grava os itens;
-- reduz o estoque.
-
-Ao cancelar uma venda, o sistema:
-
-- altera o status para CANCELADA;
-- devolve o estoque dos produtos.
+Ao cancelar venda, o sistema altera o status para CANCELADA e devolve o estoque.
 
 ## Logs
 
@@ -118,7 +148,7 @@ GET /api/logs/:id
 GET /api/logs/export/xml
 ```
 
-Filtros disponíveis na exportação XML:
+Filtros XML:
 
 ```text
 acao
@@ -130,12 +160,6 @@ data_inicio
 data_fim
 ```
 
-Exemplo:
-
-```text
-GET /api/logs/export/xml?acao=LOGIN
-```
-
 ## JSON
 
 ### Exportar
@@ -144,7 +168,7 @@ GET /api/logs/export/xml?acao=LOGIN
 GET /api/json/export/:entidade
 ```
 
-Entidades disponíveis:
+Entidades:
 
 ```text
 usuarios
@@ -167,7 +191,7 @@ Campo do arquivo:
 arquivo_json
 ```
 
-Entidades liberadas para importação:
+Entidades liberadas:
 
 ```text
 usuarios
@@ -178,15 +202,8 @@ produtos
 
 ## Relatórios
 
-### Relatório em JSON
-
 ```text
 GET /api/relatorios/vendas
-```
-
-### Relatório em PDF
-
-```text
 GET /api/relatorios/vendas/pdf
 ```
 
@@ -196,13 +213,6 @@ Filtros:
 status
 data_inicio
 data_fim
-```
-
-Exemplos:
-
-```text
-GET /api/relatorios/vendas?status=FINALIZADA
-GET /api/relatorios/vendas/pdf?status=CANCELADA
 ```
 
 ## Dashboard
