@@ -12,13 +12,7 @@ View → Router → Middleware → Controller → Service → DAO → Model → 
 
 ### View
 
-Arquivos HTML localizados em:
-
-```text
-public/html/
-```
-
-Responsável pelas telas acessadas pelo navegador.
+Arquivos HTML localizados em `public/html/`.
 
 Telas principais:
 
@@ -34,13 +28,11 @@ Telas principais:
 /dashboard
 ```
 
+A tela de produtos possui cadastro, edição, upload de imagem, pré-visualização e exibição da imagem na tabela.
+
 ### Router
 
-Arquivos localizados em:
-
-```text
-src/routes/
-```
+Arquivos localizados em `src/routes/`.
 
 Responsável por definir os endpoints da API e encaminhar as requisições para os controllers.
 
@@ -51,145 +43,173 @@ ProdutoRoutes.js
 ClienteRoutes.js
 CategoriaRoutes.js
 VendaRoutes.js
+LogRoutes.js
+JsonRoutes.js
+RelatorioRoutes.js
 DashboardRoutes.js
 ```
 
+No cadastro e edição de produtos, o Router aplica autenticação, permissão de ADMIN, upload da imagem e validação dos dados antes do Controller.
+
 ### Middleware
 
-Arquivos localizados em:
+Arquivos localizados em `src/middlewares/`.
 
-```text
-src/middlewares/
-```
-
-Responsável por validações e tarefas intermediárias.
-
-Exemplos:
+Middlewares principais:
 
 ```text
 AuthMiddleware.js
+LogMiddleware.js
+ErrorMiddleware.js
+UploadMiddleware.js
+LoginValidationMiddleware.js
 ProdutoValidationMiddleware.js
 ClienteValidationMiddleware.js
 CategoriaValidationMiddleware.js
 VendaValidationMiddleware.js
-LogMiddleware.js
 ```
 
 Funções principais:
 
 - validar token JWT;
 - validar permissão ADMIN;
-- validar dados enviados;
-- registrar logs no MongoDB.
+- validar dados enviados pelo usuário;
+- registrar logs no MongoDB;
+- tratar erros globais da aplicação;
+- receber e validar imagens enviadas no cadastro/edição de produtos.
+
+#### AuthMiddleware
+
+Controla a autenticação e autorização.
+
+Funções principais:
+
+```text
+verificarToken
+verificarAdmin
+```
+
+O `verificarToken` valida o JWT enviado no header `Authorization`. O `verificarAdmin` bloqueia ações administrativas para usuários que não são ADMIN.
+
+#### LogMiddleware
+
+Registra requisições da API no MongoDB, contendo endpoint, método HTTP, status, IP, usuário, mensagem e tempo de resposta.
+
+#### ValidationMiddleware
+
+Valida os dados antes do Controller. O projeto possui validações específicas para login, produto, cliente, categoria e venda.
+
+#### UploadMiddleware
+
+Responsável pelo upload de imagens de produtos usando Multer.
+
+Funções:
+
+- cria a pasta `uploads/produtos`, caso ela não exista;
+- salva a imagem com nome único;
+- aceita JPG, PNG e WEBP;
+- limita o tamanho do arquivo;
+- envia o arquivo para o Controller por meio de `request.file`.
+
+Fluxo do upload:
+
+```text
+produtos.html
+    ↓
+FormData
+    ↓
+ProdutoRoutes.js
+    ↓
+UploadMiddleware.js
+    ↓
+ProdutoController.js
+    ↓
+ProdutoService.js
+    ↓
+ProdutoDAO.js
+    ↓
+MySQL salva o caminho da imagem
+```
+
+A imagem é salva em:
+
+```text
+uploads/produtos/
+```
+
+O MySQL salva apenas o caminho:
+
+```text
+/uploads/produtos/nome-do-arquivo.png
+```
+
+#### ErrorMiddleware
+
+Tratamento global de erros. Fica no final do `app.js`, depois de todas as rotas. Quando ocorre erro em Controller, Service, DAO ou Middleware, ele registra o erro no MongoDB e retorna JSON padronizado.
+
+Exemplo:
+
+```json
+{
+  "success": false,
+  "message": "Mensagem do erro"
+}
+```
 
 ### Controller
 
-Arquivos localizados em:
+Arquivos em `src/controllers/`.
 
-```text
-src/controllers/
-```
+Recebe a requisição, chama o Service e devolve resposta HTTP. Não concentra regra de negócio.
 
-Responsável por receber a requisição, chamar o service e devolver a resposta HTTP.
-
-O controller não deve concentrar regras de negócio.
+No caso dos produtos, o `ProdutoController` monta o caminho da imagem quando recebe `request.file`.
 
 ### Service
 
-Arquivos localizados em:
+Arquivos em `src/services/`.
 
-```text
-src/services/
-```
-
-Responsável pelas regras de negócio.
-
-Exemplos:
-
-- validação de login;
-- criação de venda;
-- baixa de estoque;
-- cancelamento de venda;
-- geração de relatórios;
-- montagem de dashboard.
+Responsável pelas regras de negócio, como login, criação de venda, baixa de estoque, cancelamento, relatórios e dashboard.
 
 ### DAO
 
-Arquivos localizados em:
+Arquivos em `src/dao/`.
 
-```text
-src/dao/
-```
-
-Responsável pelo acesso ao banco de dados MySQL.
-
-O DAO executa os comandos SQL e isola a persistência do restante da aplicação.
+Responsável pelo acesso ao MySQL. No caso dos produtos, grava e atualiza também o campo `imagem`.
 
 ### Model
 
-Arquivos localizados em:
+Arquivos em `src/models/`.
 
-```text
-src/models/
-```
-
-Representam as entidades do sistema.
-
-Exemplos:
-
-```text
-Usuario.js
-Produto.js
-Cliente.js
-Categoria.js
-Venda.js
-Log.js
-```
+Representam entidades como `Usuario`, `Produto`, `Cliente`, `Categoria`, `Venda` e `Log`. O Model Produto possui atributo `imagem`.
 
 ### Database
 
-Arquivos localizados em:
-
-```text
-src/database/
-```
-
-Responsáveis pela conexão com os bancos de dados.
+Arquivos em `src/database/`.
 
 ```text
 MySqlDatabase.js
 MongoDatabase.js
 ```
 
+## Arquivos estáticos
+
+O `app.js` libera:
+
+```text
+public/ → telas HTML, CSS e JavaScript
+uploads/ → imagens enviadas no cadastro de produtos
+```
+
 ## Bancos utilizados
 
 ### MySQL
 
-Banco principal da aplicação.
-
-Armazena:
-
-- usuários;
-- clientes;
-- categorias;
-- produtos;
-- vendas;
-- itens de venda.
+Banco principal. Armazena usuários, clientes, categorias, produtos, vendas, itens de venda e caminho das imagens.
 
 ### MongoDB
 
-Banco auxiliar usado apenas para logs.
-
-Armazena:
-
-- acessos;
-- login;
-- erros;
-- cadastros;
-- atualizações;
-- exclusões;
-- cancelamentos.
+Banco auxiliar usado para logs de acessos, login, erros, cadastros, atualizações, exclusões e cancelamentos.
 
 ## Resumo
 
-A arquitetura foi construída para seguir o padrão solicitado na disciplina, mantendo o código organizado em camadas e separando as regras de negócio do acesso ao banco e das rotas.
+O sistema segue a arquitetura solicitada com View, Router, Middleware, Controller, Service, DAO, Model e Database. Também possui JWT, logs no MongoDB, validações, ErrorMiddleware, UploadMiddleware com Multer e exibição de imagens dos produtos.
