@@ -12,8 +12,6 @@ estoque_vendas
 
 ## Tabelas
 
-O banco possui 6 tabelas principais:
-
 ```text
 usuarios
 clientes
@@ -23,7 +21,7 @@ vendas
 itens_venda
 ```
 
-## Tabela usuarios
+## usuarios
 
 Armazena os usuários do sistema.
 
@@ -40,7 +38,7 @@ criado_em
 atualizado_em
 ```
 
-Tipos de usuário:
+Tipos:
 
 ```text
 ADMIN
@@ -54,9 +52,7 @@ admin@admin.com / 123456 / ADMIN
 usuario@teste.com / 123456 / COMUM
 ```
 
-## Tabela clientes
-
-Armazena os clientes cadastrados.
+## clientes
 
 Campos principais:
 
@@ -77,11 +73,7 @@ Relacionamento:
 clientes 1:N vendas
 ```
 
-Um cliente pode ter várias vendas.
-
-## Tabela categorias
-
-Armazena as categorias dos produtos.
+## categorias
 
 Campos principais:
 
@@ -100,11 +92,7 @@ Relacionamento:
 categorias 1:N produtos
 ```
 
-Uma categoria pode ter vários produtos.
-
-## Tabela produtos
-
-Armazena os produtos do estoque.
+## produtos
 
 Campos principais:
 
@@ -121,17 +109,32 @@ criado_em
 atualizado_em
 ```
 
-Relacionamento:
+O campo `imagem` armazena o caminho da imagem salva no servidor.
+
+Exemplo:
 
 ```text
-produtos N:N vendas
+/uploads/produtos/17123456789-123456789.png
 ```
 
-Esse relacionamento passa pela tabela `itens_venda`.
+A imagem física fica na pasta:
 
-## Tabela vendas
+```text
+uploads/produtos/
+```
 
-Armazena as vendas realizadas.
+O banco guarda apenas o caminho da imagem, evitando salvar arquivos binários diretamente no MySQL.
+
+Relacionamentos:
+
+```text
+categorias 1:N produtos
+produtos 1:N itens_venda
+```
+
+Conceitualmente, produtos e vendas formam uma relação N:N, resolvida pela tabela intermediária `itens_venda`.
+
+## vendas
 
 Campos principais:
 
@@ -160,7 +163,7 @@ usuarios 1:N vendas
 vendas 1:N itens_venda
 ```
 
-## Tabela itens_venda
+## itens_venda
 
 Tabela intermediária entre vendas e produtos.
 
@@ -182,22 +185,19 @@ vendas 1:N itens_venda
 produtos 1:N itens_venda
 ```
 
-Essa tabela permite que uma venda tenha vários produtos e que um produto apareça em várias vendas.
-
 ## Integridade referencial
-
-O banco usa chaves estrangeiras para garantir integridade.
 
 Regras importantes:
 
 - cliente com venda vinculada não pode ser excluído diretamente;
 - categoria com produto vinculado não pode ser excluída diretamente;
 - produto usado em venda não pode ser excluído diretamente;
-- ao excluir/cancelar uma venda, o estoque é tratado pela regra da aplicação.
+- ao criar venda, o estoque é reduzido;
+- ao cancelar venda, o estoque é devolvido.
 
 ## MongoDB
 
-O MongoDB é usado apenas para logs.
+O MongoDB é usado para logs.
 
 Banco:
 
@@ -211,7 +211,7 @@ Coleção:
 logs
 ```
 
-Campos principais dos logs:
+Campos principais:
 
 ```text
 acao
@@ -227,9 +227,10 @@ criado_em
 atualizado_em
 ```
 
-## Papel de cada banco
+## Papel de cada armazenamento
 
 ```text
-MySQL → dados principais e relacionais do sistema
-MongoDB → histórico de logs e eventos da aplicação
+MySQL → dados principais e relacionais
+MongoDB → histórico de logs e eventos
+Servidor → arquivos de imagem dos produtos
 ```
